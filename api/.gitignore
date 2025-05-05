@@ -35,6 +35,10 @@ lerna-debug.log*
 !.vscode/launch.json
 !.vscode/extensions.json
 
+prisma/dev.db
+prisma/client
+
+
 # dotenv environment variable files
 .env
 .env.development.local

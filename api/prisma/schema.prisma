@@ -8,24 +8,58 @@ generator client {
 }
 
 model User {
-  id        String  @id @default(uuid())
-  email     String  @unique
+  id        String   @id @default(uuid())
+  email     String   @unique
   name      String?
-  googleId  String? @unique
   avatar    String?
-  createdAt DateTime @default(now())
+  provider  AuthProvider @default(GOOGLE)
+  providerId String?  @unique
+  role      Role      @default(USER)
+  googleId  String?  
   documents Document[]
+  refreshTokens RefreshToken[]
+
+  createdAt DateTime @default(now())
 }
 
 model Document {
   id            String   @id @default(uuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id])
+
   type          DocumentType
+  originalPath  String             // S3 or local key
   originalText  String
   simplified    String?
   status        Status    @default(PENDING)
+  error         String?              // reason if FAILED
+
   createdAt     DateTime  @default(now())
-  userId        String
-  user          User      @relation(fields: [userId], references: [id])
+  completedAt   DateTime?
+
+  @@index([userId, createdAt])
+  @@index([type, createdAt])
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  tokenHash String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  expires   DateTime
+
+  createdAt DateTime @default(now())
+}
+
+enum AuthProvider {
+  GOOGLE
+  GITHUB
+  EMAIL
+}
+
+enum Role {
+  USER
+  ADMIN
 }
 
 enum DocumentType {
