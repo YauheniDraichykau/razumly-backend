@@ -10,6 +10,7 @@ generator client {
 model User {
   id        String   @id @default(uuid())
   email     String   @unique
+  passwordHash  String?
   name      String?
   avatar    String?
   provider  AuthProvider @default(GOOGLE)
@@ -47,8 +48,8 @@ model RefreshToken {
   userId    String
   user      User     @relation(fields: [userId], references: [id])
   expires   DateTime
-
   createdAt DateTime @default(now())
+  used      Boolean  @default(false)
 }
 
 enum AuthProvider {

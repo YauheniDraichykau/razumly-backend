@@ -1,28 +1,50 @@
-import { Body, Controller, Post, Res, Req } from '@nestjs/common';
+import { Body, Controller, Post, Res } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { Response, Request } from 'express';
+import { Response } from 'express';
+import { LoginDto, RegisterDto } from './dto';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly auth: AuthService) {}
 
-  @Post('google')
-  async google(
-    @Body('idToken') idToken: string,
-    @Res({ passthrough: true }) res: Response,
-    @Req() req: Request,
-  ) {
-    const { accessToken, refreshPlain, user } = await this.auth.loginWithGoogle(
-      idToken,
-      req.ip,
-    );
-
+  private setRefreshCookie(res: Response, refreshPlain: string) {
     res.cookie('refresh', refreshPlain, {
       httpOnly: true,
       secure: true,
       sameSite: 'lax',
       maxAge: 1000 * 60 * 60 * 24 * 30,
     });
+  }
+
+  @Post('register')
+  async register(
+    @Body() dto: RegisterDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const { accessToken, refreshPlain } = await this.auth.registerEmail(dto);
+    this.setRefreshCookie(res, refreshPlain);
+    return { accessToken };
+  }
+
+  @Post('login')
+  async login(
+    @Body() dto: LoginDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const { accessToken, refreshPlain } = await this.auth.loginEmail(dto);
+    this.setRefreshCookie(res, refreshPlain);
+    return { accessToken };
+  }
+
+  @Post('google')
+  async google(
+    @Body('idToken') idToken: string,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const { accessToken, refreshPlain, user } =
+      await this.auth.loginWithGoogle(idToken);
+
+    this.setRefreshCookie(res, refreshPlain);
 
     return { accessToken, user };
   }
