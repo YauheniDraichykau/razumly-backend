@@ -5,6 +5,7 @@ datasource db {
 
 generator client {
   provider = "prisma-client-js"
+  binaryTargets = ["native", "linux-arm64-openssl-1.1.x"]
 }
 
 model User {
@@ -29,14 +30,18 @@ model Document {
   user          User      @relation(fields: [userId], references: [id])
 
   type          DocumentType
-  originalPath  String             // S3 or local key
+  originalPath  String?             // S3 or local key
   originalText  String
   simplified    String?
   status        Status    @default(PENDING)
   error         String?              // reason if FAILED
+  fileMeta      Json?            // { originalName,mimeType,ext,size }
 
   createdAt     DateTime  @default(now())
   completedAt   DateTime?
+
+  audience      String?
+  includeSummary Boolean @default(false)
 
   @@index([userId, createdAt])
   @@index([type, createdAt])

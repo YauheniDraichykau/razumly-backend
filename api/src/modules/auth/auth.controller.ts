@@ -1,4 +1,5 @@
-import { Body, Controller, Post, Res } from '@nestjs/common';
+import { Body, Controller, HttpCode, Post, Req, Res } from '@nestjs/common';
+import { Request } from 'express';
 import { AuthService } from './auth.service';
 import { Response } from 'express';
 import { LoginDto, RegisterDto } from './dto';
@@ -47,5 +48,24 @@ export class AuthController {
     this.setRefreshCookie(res, refreshPlain);
 
     return { accessToken, user };
+  }
+
+  @Post('refresh')
+  @HttpCode(200)
+  async refresh(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const oldRefresh = req.cookies['refresh'];
+    const { accessToken, refreshPlain } =
+      await this.auth.rotateRefreshToken(oldRefresh);
+
+    res.cookie('refresh', refreshPlain, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'lax',
+      maxAge: 1000 * 60 * 60 * 24 * 30,
+    });
+    return { accessToken };
   }
 }

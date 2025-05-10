@@ -1,0 +1,20 @@
+- type: MEDICAL
+  audiences:
+    GENERAL: 'Make it understandable to a layperson.'
+    CHILD: 'Explain as to a 10-year-old.'
+    PATIENT: 'Explain as to a patient with no medical background.'
+  template: |
+    You are a medical assistant...
+    Simplify the following text for {{audience}}:
+    ---
+    {{text}}
+
+- type: LEGAL
+  audiences:
+    GENERAL: 'Explain legal terms in plain English.'
+    LAW_STUDENT: 'Keep legal nuance but remove archaic language.'
+  template: |
+    You are an experienced lawyer...
+    Simplify for {{audience}}:
+    ---
+    {{text}}

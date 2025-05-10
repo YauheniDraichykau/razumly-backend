@@ -6,11 +6,11 @@ import {
 import { OAuth2Client } from 'google-auth-library';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../../prisma/prisma.service';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 import { LoginDto, RegisterDto } from './dto';
-import { Role } from '@prisma/client';
 import { randomUUID } from 'crypto';
 import { JwtPayload } from './jwt.strategy';
+import { Role } from './types/jwt-payload';
 
 @Injectable()
 export class AuthService {
