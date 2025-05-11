@@ -8,7 +8,7 @@ import {
   IsBoolean,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { DocumentType } from '../types';
+import { DocumentType } from '@prisma/client';
 
 export class FileMetaDto {
   @IsString() originalName: string;

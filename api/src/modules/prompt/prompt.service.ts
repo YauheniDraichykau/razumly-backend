@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import * as yaml from 'js-yaml';
-import { DocumentType } from '../documents/types';
+import { DocumentType } from '@prisma/client';
 
 type PromptConfig = {
   type: DocumentType;
