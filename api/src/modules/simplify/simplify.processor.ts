@@ -10,13 +10,11 @@ export class SimplifyProcessor {
   constructor(
     private prisma: PrismaService,
     private prompts: PromptService,
-  ) {
-    console.debug('SIMPLIFIER CONSTRUCTOR');
-  }
+  ) {}
 
   @Process('simplify')
   async handle(job: Job<{ docId: string }>) {
-    console.debug('HANDLE IN SIMPLIFIER');
+    console.debug(`⏳ HANDLE IN SIMPLIFIER, - ${job.data?.docId}`);
 
     const doc = await this.prisma.document.findUnique({
       where: { id: job.data.docId },

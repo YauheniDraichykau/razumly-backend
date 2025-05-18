@@ -11,6 +11,7 @@ import { LoginDto, RegisterDto } from './dto';
 import { randomUUID } from 'crypto';
 import { JwtPayload } from './jwt.strategy';
 import { Role } from './types/jwt-payload';
+import { v4 as uuid } from 'uuid';
 
 @Injectable()
 export class AuthService {
@@ -38,13 +39,19 @@ export class AuthService {
   }
 
   async validateRefreshToken(refreshPlain: string) {
-    const hash = await bcrypt.hash(refreshPlain, 12);
-    const token = await this.prisma.refreshToken.findFirst({
-      where: { tokenHash: hash },
+    const [id, raw] = refreshPlain.split('.');
+    const token = await this.prisma.refreshToken.findUnique({
+      where: { id },
       include: { user: true },
     });
 
     if (!token || token.used || token.expires < new Date()) {
+      throw new UnauthorizedException();
+    }
+
+    const isValid = await bcrypt.compare(raw, token.tokenHash);
+
+    if (!isValid) {
       throw new UnauthorizedException('Refresh token invalid');
     }
 
@@ -78,12 +85,13 @@ export class AuthService {
       { expiresIn: '15m' },
     );
 
-    const refreshPlain = randomUUID();
-    const hash = await bcrypt.hash(refreshPlain, 12);
+    const tokenId = uuid();
+    const refreshPlain = `${tokenId}.${randomUUID()}`;
+    const tokenHash = await bcrypt.hash(refreshPlain.split('.')[1], 12);
     const expires = this.addDays(new Date(), 30);
 
     await this.prisma.refreshToken.create({
-      data: { userId, tokenHash: hash, expires },
+      data: { id: tokenId, tokenHash, userId, expires },
     });
 
     return { accessToken, refreshPlain };
@@ -93,7 +101,10 @@ export class AuthService {
     const exists = await this.prisma.user.findUnique({
       where: { email: dto.email },
     });
-    if (exists) throw new BadRequestException('Email already in use');
+
+    if (exists) {
+      throw new BadRequestException('Email already in use');
+    }
 
     const hash = await bcrypt.hash(dto.password, 12);
     const user = await this.prisma.user.create({
@@ -151,20 +162,6 @@ export class AuthService {
       },
     });
 
-    const accessToken = this.jwt.sign({
-      sub: user.id,
-      email: user.email,
-      role: user.role,
-    });
-
-    const refreshPlain = crypto.randomUUID();
-    const hash = await bcrypt.hash(refreshPlain, 10);
-    const expires = new Date(Date.now() + 1000 * 60 * 60 * 24 * 30); //30 days
-
-    await this.prisma.refreshToken.create({
-      data: { userId: user.id, tokenHash: hash, expires },
-    });
-
-    return { accessToken, refreshPlain, user };
+    return this.issueTokens(user.id, user.email, user.role);
   }
 }

@@ -11,7 +11,7 @@ export class AuthController {
   private setRefreshCookie(res: Response, refreshPlain: string) {
     res.cookie('refresh', refreshPlain, {
       httpOnly: true,
-      secure: true,
+      secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       maxAge: 1000 * 60 * 60 * 24 * 30,
     });
@@ -42,12 +42,10 @@ export class AuthController {
     @Body('idToken') idToken: string,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const { accessToken, refreshPlain, user } =
+    const { accessToken, refreshPlain } =
       await this.auth.loginWithGoogle(idToken);
-
     this.setRefreshCookie(res, refreshPlain);
-
-    return { accessToken, user };
+    return { accessToken };
   }
 
   @Post('refresh')
@@ -67,5 +65,23 @@ export class AuthController {
       maxAge: 1000 * 60 * 60 * 24 * 30,
     });
     return { accessToken };
+  }
+
+  @Post('logout')
+  @HttpCode(200)
+  async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    const oldRefresh = req.cookies['refresh'];
+
+    if (oldRefresh) {
+      await this.auth.revokeRefresh(oldRefresh);
+    }
+
+    res.clearCookie('refresh', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+    });
+
+    return { message: 'Logged out' };
   }
 }

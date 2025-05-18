@@ -6,11 +6,12 @@ import {
   ExtractJwt,
   StrategyOptionsWithoutRequest,
 } from 'passport-jwt';
+import { Role } from './types/jwt-payload';
 
 export type JwtPayload = {
   sub: string;
   email: string;
-  role: string;
+  role: Role;
 };
 
 @Injectable()
